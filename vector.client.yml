@@ -1,0 +1,30 @@
+sources:
+  events:
+    data_dir: "/var/local/lib/vector/"
+    type: "file"
+    include: ["/var/log/events/*"]
+    read_from: "beginning"
+
+transforms:
+  events_parser:
+    type: "remap"
+    inputs: ["events"]
+    source: |
+      parsed = parse_json!(.message)
+      ., err = merge(., parsed)
+      del(.message)
+
+sinks:
+  aggregator:
+    type: "vector"
+    inputs: ["events_parser"]
+    address: "vector-aggregator:9000"
+    version : "2"
+    batch:
+      max_bytes: 1048576  # 1 MB
+      timeout_secs: 1
+  console:
+    type: "console"
+    inputs: ["events_parser"]
+    encoding:
+      codec: "json"

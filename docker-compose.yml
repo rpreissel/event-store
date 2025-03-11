@@ -1,0 +1,63 @@
+
+version: '3.8'
+
+services:
+
+  vector-client-sidecar:
+    image: timberio/vector:0.34.0-alpine
+    volumes:
+      - ./client-data/events:/var/log/events 
+      - ./client-data/data_dir:/var/local/lib/vector/ 
+    configs:
+      - source: vector-client-config
+        target: /etc/vector/vector.yml
+    environment:
+      VECTOR_CONFIG: /etc/vector/vector.yml
+  vector-aggregator:
+    image: timberio/vector:0.34.0-alpine
+    volumes:
+      - ./sevrver-data/data_dir:/var/local/lib/vector/ 
+    configs:
+      - source: vector-aggregator-config
+        target: /etc/vector/vector.yml
+    environment:
+      VECTOR_CONFIG: /etc/vector/vector.yml    
+    depends_on:
+      - influxdb
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086" # InfluxDB API
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin123
+      DOCKER_INFLUXDB_INIT_ORG: myorg
+      DOCKER_INFLUXDB_INIT_BUCKET: mybucket
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - "3000:3000" # Grafana UI
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+volumes:
+  influxdb_data:
+  grafana_data:  
+    
+configs:
+  vector-client-config:
+    file: ./vector.client.yml
+  vector-aggregator-config:
+    file: ./vector.server.yml  
+      

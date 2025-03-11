@@ -1,0 +1,20 @@
+sources:
+  aggregator:
+    type: "vector"
+    address: "0.0.0.0:9000"
+    version: "2"
+
+sinks:
+  console:
+    type: "console"
+    inputs: ["aggregator"]
+    encoding:
+      codec: "json"
+  influxdb:
+    type: "influxdb_logs"
+    inputs: ["aggregator"]
+    endpoint: "http://influxdb:8086"
+    org: "myorg"
+    bucket: "mybucket"
+    token: "my-super-secret-auth-token"
+    measurement: "events"
