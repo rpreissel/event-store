@@ -8,6 +8,7 @@ services:
     volumes:
       - ./client-data/events:/var/log/events 
       - ./client-data/data_dir:/var/local/lib/vector/ 
+      - ./server-data:/var/local/lib/vector-tls
     configs:
       - source: vector-client-config
         target: /etc/vector/vector.yml
@@ -15,8 +16,11 @@ services:
       VECTOR_CONFIG: /etc/vector/vector.yml
   vector-aggregator:
     image: timberio/vector:0.34.0-alpine
+    ports:
+      - "9000:9000"
     volumes:
-      - ./sevrver-data/data_dir:/var/local/lib/vector/ 
+      - ./server-data/data_dir:/var/local/lib/vector/ 
+      - ./server-data:/var/local/lib/vector-tls
     configs:
       - source: vector-aggregator-config
         target: /etc/vector/vector.yml

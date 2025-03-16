@@ -23,6 +23,10 @@ sinks:
     batch:
       max_bytes: 1048576  # 1 MB
       timeout_secs: 1
+    tls:
+      enabled: true
+      ca_file: "/var/local/lib/vector-tls/server.crt"
+      verify_certificate: false # Für selbstsignierte Zertifikate  
   console:
     type: "console"
     inputs: ["events_parser"]

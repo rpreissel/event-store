@@ -3,6 +3,10 @@ sources:
     type: "vector"
     address: "0.0.0.0:9000"
     version: "2"
+    tls:
+      enabled: true
+      crt_file: "/var/local/lib/vector-tls/server.crt"
+      key_file: "/var/local/lib/vector-tls/server.key"
 
 sinks:
   console:
