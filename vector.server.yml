@@ -6,17 +6,64 @@ sources:
     tls:
       enabled: true
       crt_file: "/var/local/lib/vector-tls/server.crt"
-      key_file: "/var/local/lib/vector-tls/server.key"
+      key_file: "/var/local/lib/vector-tls/server.key"      
+
+transforms:
+  validate_combinations:
+    type: "remap"
+    inputs: ["aggregator"]
+    source: |
+      # Extract and validate required fields
+      if !exists(.application) || !exists(.event_category) || !exists(.event_type) {
+        log("Missing required field(s)", level: "warn")
+        abort
+      }
+      application = string!(.application) 
+      event_category = string!(.event_category) 
+      event_type = string!(.event_type) 
+      
+
+      whitelist = [
+        ["Zugang","Beitragskonto","Login erfolgt"],
+        ["Zugang","Beitragskonto","Passwort geändert"],
+        ["Zugang","Beitragskonto","Login fehlgeschlagen"],
+        ["Abgang","Leistungskonto","Logout erfolgt"],
+        ["Abgang","Leistungskonto","Daten aktualisiert"],
+
+        ["Zugang","Beitragskonto","Login erfolgt"],
+        ["Zugang","Beitragskonto","Passwort geändert"],
+        ["Zugang","Beitragskonto","Login fehlgeschlagen"],
+        ["Abgang","Leistungskonto","Logout erfolgt"],
+        ["Abgang","Leistungskonto","Daten aktualisiert"]        
+      ]
+      
+      # Create the combination to check
+      current_combo = [application, event_category, event_type]
+      
+      # Check if the combination is in the whitelist
+      filtered_list = filter(whitelist) -> |_index, value| {
+          value == current_combo
+      }
+      
+      is_valid = length(filtered_list) > 0
+
+      if !is_valid {
+        l, err= "Invalid combination: " + to_string(current_combo)
+        log(l, level: "error")
+      }
+      
+      # Merge parsed data
+      .valid = is_valid
 
 sinks:
   console:
     type: "console"
-    inputs: ["aggregator"]
+    inputs: ["validate_combinations"]
     encoding:
       codec: "json"
   influxdb:
     type: "influxdb_logs"
-    inputs: ["aggregator"]
+    inputs: ["validate_combinations"]
     endpoint: "http://influxdb:8086"
     org: "myorg"
     bucket: "mybucket"
